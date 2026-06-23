@@ -542,6 +542,10 @@ const hidden = document.getElementById("hidden-stats")!;
 document.getElementById("fibrillate-button")!.addEventListener("click", () => {
 	startFibrillation(true);
 });
+document.getElementById("random-fibrillate-button")!.addEventListener("click", () => {
+	startFibrillation(true);
+    state.fibrillationProgress = Math.random() * 100;
+});
 
 document.getElementById("bpm-add-10")!.addEventListener("click", () => {
 	state.heartRate += 10;
