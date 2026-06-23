@@ -289,14 +289,9 @@ const tickCirculation = (delta: number) => {
 	state.bloodVesselSize = clamp(state.bloodVesselSize, 0.85, 1.15);
 	let num6 = clamp(state.heartRate, 0, 215) - 70;
 	num6 = !(num6 > 0) ? num6 / 70 : num6 / 200;
-	let num7 = 1;
 	let num8 = 1 - state.fibrillationProgress / 260;
 	let num9 = 1 + state.bloodViscosity / 200;
-	let num10 = 1;
-	let num11 = 1;
-	let num12 = 1;
-	let num13 = 1;
-	let num14 = (120 * (1 + num6) * num7 * num8 * num9 * 1 * num10 * num11 * num12 * num13) / state.bloodVesselSize;
+	let num14 = (120 * (1 + num6) * num8 * num9) / state.bloodVesselSize;
 	state.bloodPressure = lerp(state.bloodPressure, num14, delta * 0.25);
 	state.bloodPressure = clamp(state.bloodPressure, 0, 250);
 	state.heartProg += (delta * state.heartRate) / 60;
