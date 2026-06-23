@@ -500,7 +500,7 @@ const writeStats = () => {
 			<dt>Fibrillation</dt>
 			<dd>${state.fibrillationProgress.toFixed(1)}</dd>
 			<dt>Fibrillation Progressing</dt>
-			<dd>${state.fibrillationProgress}</dd>
+			<dd>${state.fibrillationRising}</dd>
 			<dt>Success Chance With Target</dt>
 			<dd>${Math.max(0, (1 - Math.abs(state.fibrillationProgress - state.desiredCharge * 0.5) / 40) * 100).toFixed(2)}%</dd>
 			<dt>Best Charge for Success</dt>
