@@ -19,8 +19,8 @@ let state = {
 	heartProg: 0,
 	itemCharge: 1,
 	bloodPressure: 89,
-    respiratoryRate: 100,
-    bloodViscosity: 0,
+	respiratoryRate: 100,
+	bloodViscosity: 0,
 
 	charge: 0,
 	desiredCharge: 100,
@@ -29,11 +29,15 @@ let state = {
 	bloodOxygen: 100,
 	dialAngle: 0,
 	charging: false,
-	inCardiacArrest: false,
-    fibrillationRising: false,
-    fibrillationForced: false,
-    heartRatePressureOffset: 0,
-    bloodVesselSize: 1
+	get inCardiacArrest() {
+		return this.heartRate < 20;
+	},
+	get fibrillationRising() {
+		return this.heartRate > 200 || this.fibrillationForced || this.bloodPressure < 88 || this.bloodViscosity > 80;
+	},
+	fibrillationForced: false,
+	heartRatePressureOffset: 0,
+	bloodVesselSize: 1,
 };
 
 const canvas = document.getElementById("main-canvas")! as HTMLCanvasElement;
@@ -54,13 +58,23 @@ const loadImage = (src: string): Promise<HTMLImageElement> => {
 
 // lerp lerp lerp sahur
 const lerp = (a: number, b: number, t: number) => a * (1 - t) + t * b;
-const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n))
+const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n));
 
 const moveTowards = (current: number, target: number, maxDelta: number) => {
 	if (Math.abs(target - current) <= maxDelta) {
 		return target;
 	}
 	return current + Math.sign(target - current) * maxDelta;
+};
+
+const startFibrillation = (forced: boolean = false) => {
+	if (state.fibrillationProgress <= 0) {
+		state.fibrillationProgress = 0.1;
+	}
+
+	if (forced) {
+		state.fibrillationForced = true;
+	}
 };
 
 const defibBackground = await loadImage("./assets/defibBackground.png");
@@ -124,6 +138,9 @@ const components: ClickableComponent[] = [
 
 const drawBase = () => {
 	ctx.drawImage(defibBackground, 0, 0, defibBackground.width * SCALE, defibBackground.height * SCALE);
+	if (state.charging) {
+		ctx.drawImage(chargingImage, 162 * SCALE, 49 * SCALE, chargingImage.width * SCALE, chargingImage.height * SCALE);
+	}
 	for (const component of components) {
 		ctx.drawImage(component.image, component.x * SCALE, component.y * SCALE, component.width * SCALE, component.height * SCALE);
 	}
@@ -193,146 +210,112 @@ const drawBase = () => {
 };
 
 const tickCirculation = (delta: number) => {
-        state.bloodOxygen += delta * (state.respiratoryRate * 0.01 - 0.5);
-		let num = 100 - Math.abs(moveTowards(state.bloodViscosity, 0, 40)) * 0.4;
-		if (state.bloodOxygen > num)
-		{
-			state.bloodOxygen = moveTowards(state.bloodOxygen, num, delta * 0.75);
-		}
-		if (state.bloodOxygen > 100 * 0.3)
-		{
-			state.bloodOxygen = moveTowards(state.bloodOxygen, 100 * 0.3, delta * 0.8);
-		}
-		state.bloodOxygen = clamp(state.bloodOxygen, 0, 100);
-		state.bloodViscosity = moveTowards(state.bloodViscosity, 0, delta * 0.05);
-		state.bloodViscosity = clamp(state.bloodViscosity, -100, 100);
-		const num2 = Math.max(0, state.bloodViscosity);
+	state.bloodOxygen += delta * (state.respiratoryRate * 0.01 - 0.5);
+	let num = 100 - Math.abs(moveTowards(state.bloodViscosity, 0, 40)) * 0.4;
+	if (state.bloodOxygen > num) {
+		state.bloodOxygen = moveTowards(state.bloodOxygen, num, delta * 0.75);
+	}
+	if (state.bloodOxygen > 100 * 0.3) {
+		state.bloodOxygen = moveTowards(state.bloodOxygen, 100 * 0.3, delta * 0.8);
+	}
+	state.bloodOxygen = clamp(state.bloodOxygen, 0, 100);
+	state.bloodViscosity = moveTowards(state.bloodViscosity, 0, delta * 0.05);
+	state.bloodViscosity = clamp(state.bloodViscosity, -100, 100);
+	const num2 = Math.max(0, state.bloodViscosity);
 
-		let num3 = 100;
-		if (state.bloodPressure > 145)
-		{
-			num3 -= state.bloodPressure - 145;
-		}
-		if (state.bloodPressure < 20)
-		{
-			num3 = 0;
-		}
-		num3 -= state.fibrillationProgress * 0.35;
-		state.respiratoryRate = moveTowards(state.respiratoryRate, num3, delta * ((state.respiratoryRate > 10) ? 8 : 1));
-		state.respiratoryRate = clamp(state.respiratoryRate, 0, 100);
-		if (state.fibrillationProgress > 0)
-		{
-			if (state.fibrillationRising)
-			{
-				state.fibrillationProgress += delta * fibrillationrate;
-				if (state.heartRate > 280)
-				{
-					state.fibrillationProgress += delta * 3 * fibrillationrate;
-				}
+	let num3 = 100;
+	if (state.bloodPressure > 145) {
+		num3 -= state.bloodPressure - 145;
+	}
+	if (state.bloodPressure < 20) {
+		num3 = 0;
+	}
+	num3 -= state.fibrillationProgress * 0.35;
+	state.respiratoryRate = moveTowards(state.respiratoryRate, num3, delta * (state.respiratoryRate > 10 ? 8 : 1));
+	state.respiratoryRate = clamp(state.respiratoryRate, 0, 100);
+	if (state.fibrillationProgress > 0) {
+		if (state.fibrillationRising) {
+			state.fibrillationProgress += delta * fibrillationrate;
+			if (state.heartRate > 280) {
+				state.fibrillationProgress += delta * 3 * fibrillationrate;
 			}
-			else
-			{
-				state.fibrillationProgress -= delta * 0.75;
-				if (state.fibrillationProgress < 0)
-				{
-					state.fibrillationProgress = 0;
-				}
+		} else {
+			state.fibrillationProgress -= delta * 0.75;
+			if (state.fibrillationProgress < 0) {
+				state.fibrillationProgress = 0;
 			}
 		}
-		else
-		{
-			state.fibrillationForced = false;
+	} else {
+		state.fibrillationForced = false;
+	}
+	if (state.bloodOxygen < 50 || state.bloodPressure < 78 || state.heartRate > 200 || num2 > 95) {
+		startFibrillation();
+	}
+	if (state.fibrillationProgress >= 100) {
+		state.fibrillationForced = false;
+		state.heartRate = 0;
+	}
+	state.fibrillationProgress = clamp(state.fibrillationProgress, 0, 100);
+	let num4 = 120;
+	if (!state.inCardiacArrest) {
+		let targetHeartRate = 70;
+		targetHeartRate -= num2 * 0.3;
+		if (state.bloodPressure < num4 - 5) {
+			state.heartRatePressureOffset += delta * 1.5;
 		}
-		if (state.bloodOxygen < 50 || state.bloodPressure < 78 || state.heartRate > 200 || num2 > 95)
-		{
-            if (state.fibrillationProgress <= 0) {
-                state.fibrillationProgress = 0.1;
-            }
+		if (state.bloodPressure > num4 + 5) {
+			state.heartRatePressureOffset -= delta * 1.5;
 		}
-		if (state.fibrillationProgress >= 100)
-		{
-			state.fibrillationForced = false;
-			state.heartRate = 0;
+		state.heartRatePressureOffset = clamp(state.heartRatePressureOffset, -30, 80);
+		targetHeartRate += state.heartRatePressureOffset;
+		targetHeartRate += state.fibrillationProgress;
+		if (state.fibrillationProgress > 75) {
+			targetHeartRate += (state.fibrillationProgress - 75) * 4;
 		}
-		state.fibrillationProgress = clamp(state.fibrillationProgress, 0, 100);
-		let num4 = 120;
-		if (!state.inCardiacArrest)
-		{
-			let targetHeartRate = 70;
-			targetHeartRate -= num2 * 0.3;
-			if (state.bloodPressure < num4 - 5)
-			{
-				state.heartRatePressureOffset += delta * 1.5;
-			}
-			if (state.bloodPressure > num4 + 5)
-			{
-				state.heartRatePressureOffset -= delta * 1.5;
-			}
-			state.heartRatePressureOffset = clamp(state.heartRatePressureOffset, -30, 80);
-			targetHeartRate += state.heartRatePressureOffset;
-			targetHeartRate += state.fibrillationProgress;
-			if (state.fibrillationProgress > 75)
-			{
-				targetHeartRate += (state.fibrillationProgress - 75) * 4;
-			}
-			if (state.fibrillationProgress > 95)
-			{
-				targetHeartRate += (state.fibrillationProgress - 95) * 30;
-			}
-			state.heartRate = lerp(state.heartRate, targetHeartRate, delta * 0.15);
+		if (state.fibrillationProgress > 95) {
+			targetHeartRate += (state.fibrillationProgress - 95) * 30;
 		}
-		else
-		{
-			state.heartRate = 0;
+		state.heartRate = lerp(state.heartRate, targetHeartRate, delta * 0.15);
+	} else {
+		state.heartRate = 0;
+	}
+	if (state.bloodPressure > num4 + 10) {
+		state.bloodVesselSize += delta * 0.0036;
+	} else if (state.bloodPressure < num4 - 10) {
+		state.bloodVesselSize -= delta * 0.0036;
+	} else {
+		state.bloodVesselSize = moveTowards(state.bloodVesselSize, 1, delta * 0.0036);
+	}
+	state.bloodVesselSize = clamp(state.bloodVesselSize, 0.85, 1.15);
+	let num6 = clamp(state.heartRate, 0, 215) - 70;
+	num6 = !(num6 > 0) ? num6 / 70 : num6 / 200;
+	let num7 = 1;
+	let num8 = 1 - state.fibrillationProgress / 260;
+	let num9 = 1 + state.bloodViscosity / 200;
+	let num10 = 1;
+	let num11 = 1;
+	let num12 = 1;
+	let num13 = 1;
+	let num14 = (120 * (1 + num6) * num7 * num8 * num9 * 1 * num10 * num11 * num12 * num13) / state.bloodVesselSize;
+	state.bloodPressure = lerp(state.bloodPressure, num14, delta * 0.25);
+	state.bloodPressure = clamp(state.bloodPressure, 0, 250);
+	state.heartProg += (delta * state.heartRate) / 60;
+	if (state.heartProg > 1) {
+		if (state.heartProg > 1.2) {
+			state.heartProg = 1.2;
 		}
-		if (state.bloodPressure > num4 + 10)
-		{
-			state.bloodVesselSize += delta * 0.0036;
+		state.heartProg -= 1;
+		if (state.fibrillationProgress > 40) {
+			let num16 = (state.fibrillationProgress - 40) / 150;
+			state.randomFibrillationVariation = 1 + Math.random() * num16 - num16;
+		} else {
+			state.randomFibrillationVariation = 1;
 		}
-		else if (state.bloodPressure < num4 - 10)
-		{
-			state.bloodVesselSize -= delta * 0.0036;
-		}
-		else
-		{
-			state.bloodVesselSize = moveTowards(state.bloodVesselSize, 1, delta * 0.0036);
-		}
-		state.bloodVesselSize = clamp(state.bloodVesselSize, 0.85, 1.15);
-		let num6 = clamp(state.heartRate, 0, 215) - 70;
-		num6 = ((!(num6 > 0)) ? (num6 / 70) : (num6 / 200));
-		let num7 = 1;
-		let num8 = 1 - state.fibrillationProgress / 260;
-		let num9 = 1 + state.bloodViscosity / 200;
-		let num10 = 1;
-		let num11 = 1;
-		let num12 = 1;
-		let num13 = 1;
-		let num14 = 120 * (1 + num6) * num7 * num8 * num9 * 1 * num10 * num11 * num12 * num13 / state.bloodVesselSize;
-		state.bloodPressure = lerp(state.bloodPressure, num14, delta * 0.25);
-		state.bloodPressure = clamp(state.bloodPressure, 0, 250);
-		state.heartProg += delta * state.heartRate / 60;
-		if (state.heartProg > 1)
-		{
-			if (state.heartProg > 1.2)
-			{
-				state.heartProg = 1.2;
-			}
-			state.heartProg -= 1;
-			if (state.fibrillationProgress > 40)
-			{
-				let num16 = (state.fibrillationProgress - 40) / 150;
-				state.randomFibrillationVariation = 1 + Math.random() * num16 - num16;
-			}
-			else
-			{
-				state.randomFibrillationVariation = 1;
-			}
-		}
-		state.defibShockedFrames--;
-		if (state.defibShockedFrames < 0)
-		{
-			state.defibShockedFrames = 0;
-		}
+	}
+	state.defibShockedFrames--;
+	if (state.defibShockedFrames < 0) {
+		state.defibShockedFrames = 0;
+	}
 };
 
 const tickCharge = (delta: number) => {
@@ -349,17 +332,22 @@ let mouseY = 0;
 let mouseDown = false;
 let draggingDial = false;
 let justClicked = false;
-document.body.addEventListener("mousedown", () => {
+const mouseDownCb = () => {
 	mouseDown = true;
 	justClicked = true;
-});
-document.body.addEventListener("mouseup", () => {
-	mouseDown = false;
-});
-document.body.addEventListener("mousemove", e => {
+};
+const mouseMoveCb = (e: MouseEvent) => {
 	mouseX = e.clientX;
 	mouseY = e.clientY;
-});
+};
+const mouseUpCb = () => {
+	mouseDown = false;
+};
+document.body.addEventListener("mousedown", mouseDownCb);
+document.body.addEventListener("mousemove", mouseMoveCb);
+document.body.addEventListener("mouseup", mouseUpCb);
+document.body.addEventListener("pointerdown", mouseDownCb);
+document.body.addEventListener("pointermove", mouseMoveCb);
 
 const tickControls = () => {
 	checkDial();
@@ -505,6 +493,26 @@ const drawAll = (delta: number) => {
 	ecg.draw(delta);
 };
 
+const writeStats = () => {
+	if (showHidden) {
+		hidden.innerHTML = `<dl>
+		<div>
+			<dt>Fibrillation</dt>
+			<dd>${state.fibrillationProgress.toFixed(1)}</dd>
+			<dt>Fibrillation Progressing</dt>
+			<dd>${state.fibrillationProgress}</dd>
+			<dt>Success Chance With Target</dt>
+			<dd>${Math.max(0, (1 - Math.abs(state.fibrillationProgress - state.desiredCharge * 0.5) / 40) * 100).toFixed(2)}%</dd>
+			<dt>Best Charge for Success</dt>
+			<dd>${Math.round(state.fibrillationProgress * 2)}</dd>
+		</div>
+	</dl>`;
+	} else {
+		hidden.innerHTML = "";
+	}
+};
+
+let showHidden = false;
 let lastT = 0;
 setInterval(() => {
 	if (!lastT) {
@@ -516,8 +524,19 @@ setInterval(() => {
 	tickCharge(delta);
 	tickControls();
 	drawAll(delta);
+	writeStats();
 	lastT = Date.now();
 }, 1000 / 60);
 drawBase();
 
-window.state = state;
+(window as any).state = state;
+
+const hidden = document.getElementById("hidden-stats")!;
+
+document.getElementById("fibrillate-button")!.addEventListener("click", () => {
+	startFibrillation(true);
+});
+
+document.getElementById("toggle-hidden-button")!.addEventListener("click", () => {
+	showHidden = !showHidden;
+});
