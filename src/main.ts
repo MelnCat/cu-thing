@@ -1,3 +1,11 @@
+import defibBackgroundUrl from "./assets/image/defibBackground.png";
+import manualDefibChargeUrl from "./assets/image/manualDefibCharge.png";
+import manualDefibChargingUrl from "./assets/image/manualDefibCharging.png";
+import manualDefibDialUrl from "./assets/image/manualDefibDial.png";
+import manualDefibShockUrl from "./assets/image/manualDefibShock.png";
+
+import manualDefibSoundUrl from "./assets/audio/manualdefib.ogg";
+
 import { evaluateAnimationCurve, heartCurveArrythmia, heartCurveNormal } from "./curves";
 import "./style.css";
 
@@ -77,11 +85,11 @@ const startFibrillation = (forced: boolean = false) => {
 	}
 };
 
-const defibBackground = await loadImage("./assets/defibBackground.png");
-const dialImage = await loadImage("./assets/manualDefibDial.png");
-const chargeButtonImage = await loadImage("./assets/manualDefibCharge.png");
-const chargingImage = await loadImage("./assets/manualDefibCharging.png");
-const shockButtonImage = await loadImage("./assets/manualDefibShock.png");
+const defibBackground = await loadImage(defibBackgroundUrl);
+const dialImage = await loadImage(manualDefibDialUrl);
+const chargeButtonImage = await loadImage(manualDefibChargeUrl);
+const chargingImage = await loadImage(manualDefibChargingUrl);
+const shockButtonImage = await loadImage(manualDefibShockUrl);
 
 interface ClickableComponent {
 	x: number;
@@ -92,6 +100,8 @@ interface ClickableComponent {
 	image: HTMLImageElement;
 	onClick(): void;
 }
+
+const manualDefibSound = new Audio(manualDefibSoundUrl);
 
 const components: ClickableComponent[] = [
 	{
@@ -129,6 +139,7 @@ const components: ClickableComponent[] = [
 			//state.itemCharge -= state.charge / 4000 / (1 * 0.01);
 			state.charge = 0;
 			state.charging = false;
+			manualDefibSound.play();
 		},
 		isIn(x, y) {
 			return x >= this.x && x <= this.x + this.width && y >= this.y && y <= this.y + this.height;
@@ -530,6 +541,14 @@ const hidden = document.getElementById("hidden-stats")!;
 
 document.getElementById("fibrillate-button")!.addEventListener("click", () => {
 	startFibrillation(true);
+});
+
+document.getElementById("bpm-add-10")!.addEventListener("click", () => {
+	state.heartRate += 10;
+});
+
+document.getElementById("bpm-sub-10")!.addEventListener("click", () => {
+	state.heartRate -= 10;
 });
 
 document.getElementById("toggle-hidden-button")!.addEventListener("click", () => {

@@ -34,7 +34,7 @@ canvas {
 
 @font-face {
 	font-family: "Retro Gaming";
-	src: url("./assets/RetroGaming.ttf");
+	src: url("./assets/font/RetroGaming.ttf");
 	text-rendering: optimizeSpeed;
 }
 #hidden-stats {
