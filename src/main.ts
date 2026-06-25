@@ -50,8 +50,8 @@ let state = {
 
 const canvas = document.getElementById("main-canvas")! as HTMLCanvasElement;
 
-canvas.width = WIDTH * SCALE;
-canvas.height = HEIGHT * SCALE;
+// canvas.width = WIDTH * SCALE;
+// canvas.height = HEIGHT * SCALE;
 
 const ctx = canvas.getContext("2d")!;
 ctx.imageSmoothingEnabled = false;
@@ -499,25 +499,6 @@ const drawAll = (delta: number) => {
 	ecg.draw(delta);
 };
 
-const writeStats = () => {
-	if (showHidden) {
-		hidden.innerHTML = `<dl>
-		<div>
-			<dt>Fibrillation</dt>
-			<dd>${state.fibrillationProgress.toFixed(1)}</dd>
-			<dt>Fibrillation Progressing</dt>
-			<dd>${state.fibrillationRising}</dd>
-			<dt>Success Chance With Target</dt>
-			<dd>${Math.max(0, (1 - Math.abs(state.fibrillationProgress - state.desiredCharge * 0.5) / 40) * 100).toFixed(2)}%</dd>
-			<dt>Best Charge for Success</dt>
-			<dd>${Math.round(state.fibrillationProgress * 2)}</dd>
-		</div>
-	</dl>`;
-	} else {
-		hidden.innerHTML = "";
-	}
-};
-
 let showHidden = false;
 let lastT = 0;
 setInterval(() => {
@@ -530,31 +511,8 @@ setInterval(() => {
 	tickCharge(delta);
 	tickControls();
 	drawAll(delta);
-	writeStats();
 	lastT = Date.now();
 }, 1000 / 60);
 drawBase();
 
 (window as any).state = state;
-
-const hidden = document.getElementById("hidden-stats")!;
-
-document.getElementById("fibrillate-button")!.addEventListener("click", () => {
-	startFibrillation(true);
-});
-document.getElementById("random-fibrillate-button")!.addEventListener("click", () => {
-	startFibrillation(true);
-    state.fibrillationProgress = Math.random() * 100;
-});
-
-document.getElementById("bpm-add-10")!.addEventListener("click", () => {
-	state.heartRate += 10;
-});
-
-document.getElementById("bpm-sub-10")!.addEventListener("click", () => {
-	state.heartRate -= 10;
-});
-
-document.getElementById("toggle-hidden-button")!.addEventListener("click", () => {
-	showHidden = !showHidden;
-});
