@@ -50,8 +50,8 @@ let state = {
 
 const canvas = document.getElementById("main-canvas")! as HTMLCanvasElement;
 
-// canvas.width = WIDTH * SCALE;
-// canvas.height = HEIGHT * SCALE;
+canvas.width = WIDTH * SCALE;
+canvas.height = HEIGHT * SCALE;
 
 const ctx = canvas.getContext("2d")!;
 ctx.imageSmoothingEnabled = false;
