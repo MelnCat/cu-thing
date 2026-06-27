@@ -1,6 +1,6 @@
-import { SCALE } from "../constants";
-import { evaluateAnimationCurve, heartCurveArrythmia, heartCurveNormal } from "../curves";
-import { lerp } from "../math";
+import { SCALE } from "./constants";
+import { evaluateAnimationCurve, heartCurveArrythmia, heartCurveNormal } from "./curves";
+import { lerp } from "./math";
 
 const WIDTH = 122;
 const HEIGHT = 41;
@@ -154,7 +154,7 @@ export class VisualEcgController {
 		this.ecg.writeHeight = 0;
 		this.ecg.lastY = this.canvas.height / 2;
 		this.heartProg = 0;
-        this.ecg.timeToUpdate = 0;
+		this.ecg.timeToUpdate = 0;
 		while (this.ecg.writeX < num) {
 			this.tick(1 / 60);
 		}

@@ -1,4 +1,4 @@
-import { VisualEcgController } from "./assets/ecg";
+import { VisualEcgController } from "./util/ecg";
 import "./ecgStyles.css";
 // const bpmList = [70, 100, 150, 200];
 // const fibList = [0, 10, 25, 50, 75, 90];

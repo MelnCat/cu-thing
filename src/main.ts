@@ -6,11 +6,11 @@ import manualDefibShockUrl from "./assets/image/manualDefibShock.png";
 
 import manualDefibSoundUrl from "./assets/audio/manualdefib.ogg";
 
-import { evaluateAnimationCurve, heartCurveArrythmia, heartCurveNormal } from "./curves";
+import { evaluateAnimationCurve, heartCurveArrythmia, heartCurveNormal } from "./util/curves";
 import "./style.css";
-import { SCALE } from "./constants";
-import { moveTowards, clamp, lerp } from "./math";
-import { EcgController } from "./assets/ecg";
+import { SCALE } from "./util/constants";
+import { moveTowards, clamp, lerp } from "./util/math";
+import { EcgController } from "./util/ecg";
 
 const WIDTH = 256;
 const HEIGHT = 220;
