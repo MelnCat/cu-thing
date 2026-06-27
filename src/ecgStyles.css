@@ -1,0 +1,14 @@
+#app {
+	display: grid;
+    canvas {
+        width: 20em;
+    }
+}
+body {
+	background-color: #111111;
+    color: white;
+    font-family: Arial, Helvetica, sans-serif;
+}
+canvas {
+	image-rendering: pixelated;
+}

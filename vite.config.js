@@ -1,6 +1,13 @@
+import { resolve } from "path";
 /** @type {import('vite').UserConfig} */
 export default {
-    build: {
-        assetsInlineLimit: 1000000
-    }
-}
+	build: {
+		minify: false,
+		rolldownOptions: {
+			input: {
+				main: resolve(import.meta.dirname, "index.html"),
+				ecg: resolve(import.meta.dirname, "ecg.html"),
+			},
+		}
+	},
+};
